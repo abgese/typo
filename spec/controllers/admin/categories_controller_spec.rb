@@ -7,6 +7,7 @@ describe Admin::CategoriesController do
     Factory(:blog)
     #TODO Delete after removing fixtures
     Profile.delete_all
+    post(:edit, :category => {:name => 'category_name', :keywords => 'category_keywords', :description => 'category_description'})
     henri = Factory(:user, :login => 'henri', :profile => Factory(:profile_admin, :label => Profile::ADMIN))
     request.session = { :user => henri.id }
   end
@@ -63,4 +64,22 @@ describe Admin::CategoriesController do
     assert_raise(ActiveRecord::RecordNotFound) { Category.find(test_id) }
   end
   
+
+  it 'should allow creating new categories' do
+    category = Factory(:category)
+    Category.should_receive(:new).and_return(category)
+    post(:edit, :category => {:name => 'new_category_name', :keywords => 'new_category_keywords', :description => 'new_category_description'})
+    assert_response :redirect, :action => 'index'
+    expect(assigns(:category)).to_not be_nil
+    expect(flash[:notice]).to eq("Category was successfully saved.")
+  end
+  
+  it 'should allow editing existing categories' do
+    category = Factory(:category)
+    Category.should_receive(:find).with(:all)
+    Category.should_receive(:find).with(category.id).and_return(category)
+    post(:edit, :id=>category.id, :category => {:name => 'category_name', :keywords => 'category_keywords', :description => 'category_description'})
+    expect(assigns(:category)).to_not be_nil
+    expect(flash[:notice]).to eq("Category was successfully saved.")
+  end
 end
